@@ -99,6 +99,17 @@ if [ ! -z "\$WAYLAND_DISPLAY" ]; then
   echo "Wayland detected" >> "\$LOG_FILE"
 fi
 
+# Check for Wayland-specific issues and set compatibility mode if needed
+if [ "\$IS_WAYLAND" = true ]; then
+  echo "Setting Wayland compatibility mode..." >> "\$LOG_FILE"
+  # Force X11 backend to avoid Wayland GPU issues
+  export GDK_BACKEND=x11
+  export ELECTRON_OZONE_PLATFORM_HINT=x11
+  # Disable GPU acceleration to prevent dmabuf errors
+  export ELECTRON_DISABLE_GPU=1
+  echo "Wayland compatibility mode enabled (using X11 backend)" >> "\$LOG_FILE"
+fi
+
 # Determine Electron executable path
 ELECTRON_EXEC="electron" # Default to global
 LOCAL_ELECTRON_PATH="/usr/lib/$PACKAGE_NAME/node_modules/electron/dist/electron" # Correct path to executable
@@ -125,10 +136,10 @@ fi
 APP_PATH="/usr/lib/$PACKAGE_NAME/app.asar"
 ELECTRON_ARGS=("\$APP_PATH")
 
-# Add Wayland flags if Wayland is detected
+# Add compatibility flags
 if [ "\$IS_WAYLAND" = true ]; then
-  echo "Adding Wayland flags" >> "\$LOG_FILE"
-  ELECTRON_ARGS+=("--enable-features=UseOzonePlatform,WaylandWindowDecorations" "--ozone-platform=wayland" "--enable-wayland-ime" "--wayland-text-input-version=3")
+  echo "Adding compatibility flags for Wayland session" >> "\$LOG_FILE"
+  ELECTRON_ARGS+=("--no-sandbox" "--disable-gpu" "--disable-software-rasterizer")
 fi
 
 # Change to the application directory
