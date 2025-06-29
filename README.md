@@ -1,5 +1,7 @@
-# Archived
-Sorry all, I no longer use Debian, so can't maintain this further. Please feel free to fork and continue developing. 
+# Un-Archived
+I'm back from my tangent on Arch and then Nix and running Pop OS now, which will allow me to continue working on this.
+
+I'd recommend trying out [yousshark's](https://github.com/yousshark/claude-desktop-debian) and [joshuacox's](https://github.com/joshuacox/claude-desktop-appimage) forks while I get my feet back under me.
 
 
 ## Release Workflow & Feedback
@@ -9,9 +11,6 @@ This repository now uses a GitHub Actions workflow to automatically build and re
 Please check the [Releases page](https://github.com/aaddrick/claude-desktop-debian/releases) for the latest builds. Feedback on the packages and the build process is greatly appreciated! Please open an issue if you encounter any problems.
 
 ---
-
-
-**Arch Linux users:** For the PKGBUILD and Arch-specific instructions: [https://github.com/aaddrick/claude-desktop-arch](https://github.com/aaddrick/claude-desktop-arch)
 
 The build script now uses command-line flags to select the output format and cleanup behavior.
 
