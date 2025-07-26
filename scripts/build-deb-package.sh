@@ -150,7 +150,7 @@ ELECTRON_ARGS=("\$APP_PATH")
 # Add compatibility flags
 if [ "\$IS_WAYLAND" = true ]; then
   echo "Adding compatibility flags for Wayland session" >> "\$LOG_FILE"
-  ELECTRON_ARGS+=("--no-sandbox" "--disable-gpu" "--disable-software-rasterizer")
+  ELECTRON_ARGS+=("--no-sandbox")
 fi
 
 # Change to the application directory
