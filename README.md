@@ -2,7 +2,7 @@
 
 This project provides build scripts to run Claude Desktop natively on Linux systems. It repackages the official Windows application for Debian-based distributions, producing either `.deb` packages or AppImages.
 
-**Note:** This is an unofficial build script. For official support, please visit [Anthropic's website](https://www.anthropic.com).
+**Note:** This is an unofficial build script. For official support, please visit [Anthropic's website](https://www.anthropic.com). For issues with the build script or Linux implementation, please [open an issue](https://github.com/aaddrick/claude-desktop-debian/issues) in this repository.
 
 ## Features
 
