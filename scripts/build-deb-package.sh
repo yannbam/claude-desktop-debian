@@ -110,14 +110,9 @@ if [ "\$IS_WAYLAND" = true ]; then
   echo "Wayland compatibility mode enabled (using X11 backend)" >> "\$LOG_FILE"
 elif [ -z "\$DISPLAY" ] && [ -z "\$WAYLAND_DISPLAY" ]; then
   echo "No display detected (TTY session) - cannot start graphical application" >> "\$LOG_FILE"
-  # Optionally, display an error to the user via zenity or kdialog if available
   # No graphical environment detected; display error message in TTY session
   echo "Error: Claude Desktop requires a graphical desktop environment." >&2
   echo "Please run from within an X11 or Wayland session, not from a TTY." >&2
-  else
-    echo "Error: Claude Desktop requires a graphical desktop environment." >&2
-    echo "Please run from within an X11 or Wayland session, not from a TTY." >&2
-  fi
   exit 1
 fi
 
