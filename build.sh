@@ -47,9 +47,9 @@ if [ -z "$ORIGINAL_HOME" ]; then
 fi
 echo "Running as user: $ORIGINAL_USER (Home: $ORIGINAL_HOME)"
 
-# Check for NVM and source it if found to ensure npm/npx are available later
+# Check for NVM and source it if found - this may provide a Node.js 20+ version
 if [ -d "$ORIGINAL_HOME/.nvm" ]; then
-    echo "Found NVM installation for user $ORIGINAL_USER, attempting to activate..."
+    echo "Found NVM installation for user $ORIGINAL_USER, checking for Node.js 20+..."
     export NVM_DIR="$ORIGINAL_HOME/.nvm"
     if [ -s "$NVM_DIR/nvm.sh" ]; then
         # Source NVM script to set up NVM environment variables temporarily
@@ -63,7 +63,7 @@ if [ -d "$ORIGINAL_HOME/.nvm" ]; then
             echo "Adding NVM Node bin path to PATH: $NODE_BIN_PATH"
             export PATH="$NODE_BIN_PATH:$PATH"
         else
-            echo "Warning: Could not determine NVM Node bin path. npm/npx might not be found."
+            echo "Warning: Could not determine NVM Node bin path."
         fi
     else
         echo "Warning: nvm.sh script not found or not sourceable."
@@ -155,7 +155,7 @@ check_command() {
 
 echo "Checking dependencies..."
 DEPS_TO_INSTALL=""
-COMMON_DEPS="p7zip wget wrestool icotool convert npx"
+COMMON_DEPS="p7zip wget wrestool icotool convert"
 DEB_DEPS="dpkg-deb"
 APPIMAGE_DEPS="" 
 ALL_DEPS_TO_CHECK="$COMMON_DEPS"
@@ -172,7 +172,6 @@ for cmd in $ALL_DEPS_TO_CHECK; do
             "wget") DEPS_TO_INSTALL="$DEPS_TO_INSTALL wget" ;;
             "wrestool"|"icotool") DEPS_TO_INSTALL="$DEPS_TO_INSTALL icoutils" ;;
             "convert") DEPS_TO_INSTALL="$DEPS_TO_INSTALL imagemagick" ;;
-            "npx") DEPS_TO_INSTALL="$DEPS_TO_INSTALL nodejs npm" ;;
             "dpkg-deb") DEPS_TO_INSTALL="$DEPS_TO_INSTALL dpkg-dev" ;;
         esac
     fi
@@ -200,7 +199,82 @@ fi
 
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
-mkdir -p "$APP_STAGING_DIR" 
+mkdir -p "$APP_STAGING_DIR"
+
+echo -e "\033[1;36m--- Node.js Setup ---\033[0m"
+echo "Checking Node.js version..."
+NODE_VERSION_OK=false
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node --version | cut -d'v' -f2)
+    NODE_MAJOR=$(echo "$NODE_VERSION" | cut -d'.' -f1)
+    echo "System Node.js version: v$NODE_VERSION"
+    
+    if [ "$NODE_MAJOR" -ge 20 ]; then
+        echo "✓ System Node.js version is adequate (v$NODE_VERSION)"
+        NODE_VERSION_OK=true
+    else
+        echo "⚠️ System Node.js version is too old (v$NODE_VERSION). Need v20+"
+    fi
+else
+    echo "⚠️ Node.js not found in system"
+fi
+
+# If system Node.js is not adequate, install a local copy
+if [ "$NODE_VERSION_OK" = false ]; then
+    echo "Installing Node.js v20 locally in build directory..."
+    
+    # Determine Node.js download URL based on architecture
+    if [ "$ARCHITECTURE" = "amd64" ]; then
+        NODE_ARCH="x64"
+    elif [ "$ARCHITECTURE" = "arm64" ]; then
+        NODE_ARCH="arm64"
+    else
+        echo "❌ Unsupported architecture for Node.js: $ARCHITECTURE"
+        exit 1
+    fi
+    
+    NODE_VERSION_TO_INSTALL="20.18.1"
+    NODE_TARBALL="node-v${NODE_VERSION_TO_INSTALL}-linux-${NODE_ARCH}.tar.xz"
+    NODE_URL="https://nodejs.org/dist/v${NODE_VERSION_TO_INSTALL}/${NODE_TARBALL}"
+    NODE_INSTALL_DIR="$WORK_DIR/node"
+    
+    echo "Downloading Node.js v${NODE_VERSION_TO_INSTALL} for ${NODE_ARCH}..."
+    cd "$WORK_DIR"
+    if ! wget -O "$NODE_TARBALL" "$NODE_URL"; then
+        echo "❌ Failed to download Node.js from $NODE_URL"
+        cd "$PROJECT_ROOT"
+        exit 1
+    fi
+    
+    echo "Extracting Node.js..."
+    if ! tar -xf "$NODE_TARBALL"; then
+        echo "❌ Failed to extract Node.js tarball"
+        cd "$PROJECT_ROOT"
+        exit 1
+    fi
+    
+    # Move extracted files to a consistent location
+    mv "node-v${NODE_VERSION_TO_INSTALL}-linux-${NODE_ARCH}" "$NODE_INSTALL_DIR"
+    
+    # Add local Node.js to PATH for this script
+    export PATH="$NODE_INSTALL_DIR/bin:$PATH"
+    
+    # Verify local Node.js installation
+    if command -v node &> /dev/null; then
+        LOCAL_NODE_VERSION=$(node --version)
+        echo "✓ Local Node.js installed successfully: $LOCAL_NODE_VERSION"
+    else
+        echo "❌ Failed to install local Node.js"
+        cd "$PROJECT_ROOT"
+        exit 1
+    fi
+    
+    # Clean up tarball
+    rm -f "$NODE_TARBALL"
+    
+    cd "$PROJECT_ROOT"
+fi
+echo -e "\033[1;36m--- End Node.js Setup ---\033[0m" 
 echo -e "\033[1;36m--- Electron & Asar Handling ---\033[0m"
 CHOSEN_ELECTRON_MODULE_PATH="" ASAR_EXEC=""
 
