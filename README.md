@@ -10,7 +10,7 @@ This project provides build scripts to run Claude Desktop natively on Linux syst
 - **MCP Support**: Full Model Context Protocol integration  
   Configuration file location: `~/.config/Claude/claude_desktop_config.json`
 - **System Integration**: 
-  - Global hotkey support (Ctrl+Alt+Space)
+  - X11 Global hotkey support (Ctrl+Alt+Space)
   - System tray integration
   - Desktop environment integration
 
