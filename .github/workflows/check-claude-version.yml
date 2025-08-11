@@ -1,10 +1,16 @@
 name: Check Claude Desktop Version
+# IMPORTANT: This workflow requires a Personal Access Token (PAT) to function properly
+# Create a PAT with 'repo' and 'workflow' scopes and add it as a secret named GH_PAT
+# Without it, the workflow cannot update variables and will fail to prevent duplicate releases
 
 on:
   schedule:
     # Run daily at 1 AM UTC
     - cron: "0 1 * * *"
   workflow_dispatch: # Allow manual triggering for testing
+
+permissions:
+  contents: write  # For creating tags and releases
 
 jobs:
   check-version:
@@ -15,7 +21,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0 # Need full history for tags
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
     
     - name: Set up environment
       run: |
@@ -98,10 +104,18 @@ jobs:
     - name: Update version variable and create tag
       if: steps.check_update.outputs.update_needed == 'true'
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         CLAUDE_VERSION="${{ steps.check_version.outputs.claude_version }}"
         NEW_TAG="${{ steps.check_update.outputs.new_tag }}"
+        
+        # Check if we have a PAT
+        if [ -z "$GH_TOKEN" ]; then
+          echo "❌ Error: GH_PAT secret is not configured"
+          echo "This workflow requires a Personal Access Token to update repository variables"
+          echo "Please create a PAT with 'repo' and 'workflow' scopes and add it as GH_PAT secret"
+          exit 1
+        fi
         
         echo "Updating CLAUDE_DESKTOP_VERSION variable to $CLAUDE_VERSION"
         gh variable set CLAUDE_DESKTOP_VERSION --body "$CLAUDE_VERSION"
@@ -123,7 +137,7 @@ jobs:
     - name: Create release
       if: steps.check_update.outputs.update_needed == 'true'
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         NEW_TAG="${{ steps.check_update.outputs.new_tag }}"
         CLAUDE_VERSION="${{ steps.check_version.outputs.claude_version }}"
