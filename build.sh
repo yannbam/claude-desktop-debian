@@ -475,6 +475,29 @@ else
     echo "Warning: Staged Electron binary not found at expected path: $STAGED_ELECTRON_BIN"
 fi
 
+# Ensure Electron locale files are available
+ELECTRON_RESOURCES_SRC="$CHOSEN_ELECTRON_MODULE_PATH/dist/resources"
+ELECTRON_RESOURCES_DEST="$APP_STAGING_DIR/node_modules/$ELECTRON_DIR_NAME/dist/resources"
+if [ -d "$ELECTRON_RESOURCES_SRC" ]; then
+    echo "Copying Electron locale resources..."
+    mkdir -p "$ELECTRON_RESOURCES_DEST"
+    cp -a "$ELECTRON_RESOURCES_SRC"/* "$ELECTRON_RESOURCES_DEST/"
+    echo "✓ Electron locale resources copied"
+else
+    echo "⚠️  Warning: Electron resources directory not found at $ELECTRON_RESOURCES_SRC"
+fi
+
+# Copy Claude locale JSON files to Electron resources directory where they're expected
+CLAUDE_LOCALE_SRC="$CLAUDE_EXTRACT_DIR/lib/net45/resources"
+echo "Copying Claude locale JSON files to Electron resources directory..."
+if [ -d "$CLAUDE_LOCALE_SRC" ]; then
+    # Copy Claude's locale JSON files to the Electron resources directory
+    cp "$CLAUDE_LOCALE_SRC/"*-*.json "$ELECTRON_RESOURCES_DEST/"
+    echo "✓ Claude locale JSON files copied to Electron resources directory"
+else
+    echo "⚠️  Warning: Claude locale source directory not found at $CLAUDE_LOCALE_SRC"
+fi
+
 echo "✓ app.asar processed and staged in $APP_STAGING_DIR"
 
 cd "$PROJECT_ROOT"
@@ -568,17 +591,29 @@ if [ "$BUILD_FORMAT" = "deb" ]; then
 elif [ "$BUILD_FORMAT" = "appimage" ]; then
     if [ "$FINAL_OUTPUT_PATH" != "Not Found" ] && [ -e "$FINAL_OUTPUT_PATH" ]; then
         echo -e "✅ AppImage created at: \033[1;36m$FINAL_OUTPUT_PATH\033[0m"
-        echo -e "\n\033[1;33mIMPORTANT:\033[0m This AppImage requires \033[1;36mAppImageLauncher\033[0m for proper desktop integration"
+        echo -e "\n\033[1;33mIMPORTANT:\033[0m This AppImage requires \033[1;36mGear Lever\033[0m for proper desktop integration"
         echo -e "and to handle the \`claude://\` login process correctly."
-        echo -e "\n🚀 To install AppImageLauncher (v2.2.0 for amd64):"
-        echo -e "   1. Download:"
-        echo -e "      \033[1;32mwget https://github.com/TheAssassin/AppImageLauncher/releases/download/v2.2.0/appimagelauncher_2.2.0-travis995.0f91801.bionic_amd64.deb -O /tmp/appimagelauncher.deb\033[0m"
-        echo -e "       - or appropriate package from here: \033[1;34mhttps://github.com/TheAssassin/AppImageLauncher/releases/latest\033[0m"
-        echo -e "   2. Install the package:"
-        echo -e "      \033[1;32msudo dpkg -i /tmp/appimagelauncher.deb\033[0m"
-        echo -e "   3. Fix any missing dependencies:"
-        echo -e "      \033[1;32msudo apt --fix-broken install\033[0m"
-        echo -e "\n   After installation, simply double-click \033[1;36m$FINAL_OUTPUT_PATH\033[0m and choose 'Integrate and run'."
+        echo -e "\n🚀 To install Gear Lever:"
+        echo -e "   1. Install via Flatpak:"
+        echo -e "      \033[1;32mflatpak install flathub it.mijorus.gearlever\033[0m"
+        echo -e "       - or visit: \033[1;34mhttps://flathub.org/apps/it.mijorus.gearlever\033[0m"
+        echo -e "   2. Integrate your AppImage with just one click:"
+        echo -e "      - Open Gear Lever"
+        echo -e "      - Drag and drop \033[1;36m$FINAL_OUTPUT_PATH\033[0m into Gear Lever"
+        echo -e "      - Click 'Integrate' to add it to your app menu"
+        if [ "$GITHUB_ACTIONS" = "true" ]; then
+            echo -e "\n   \033[1;32m✓\033[0m This AppImage includes embedded update information!"
+            echo -e "   \033[1;32m✓\033[0m Gear Lever will automatically detect and handle updates from GitHub releases."
+            echo -e "   \033[1;32m✓\033[0m No manual update URL configuration needed."
+        else
+            echo -e "\n   \033[1;33mℹ\033[0m This locally-built AppImage does not include update information."
+            echo -e "   \033[1;33mℹ\033[0m You can manually configure updates in Gear Lever:"
+            echo -e "   3. Configure manual updates (optional):"
+            echo -e "      - In Gear Lever, select your integrated Claude Desktop"
+            echo -e "      - Choose 'Github' as update source"
+            echo -e "      - Use this update URL: \033[1;33mhttps://github.com/aaddrick/claude-desktop-debian/releases/download/*/claude-desktop-*-${ARCHITECTURE}.AppImage\033[0m"
+            echo -e "   \033[1;34m→\033[0m For automatic updates, download release versions: https://github.com/aaddrick/claude-desktop-debian/releases"
+        fi
     else
         echo -e "⚠️ AppImage file not found. Cannot provide usage instructions."
     fi

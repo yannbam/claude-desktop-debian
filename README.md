@@ -71,10 +71,12 @@ chmod +x ./claude-desktop-*.AppImage
 # Run directly
 ./claude-desktop-*.AppImage
 
-# Or integrate with your system using AppImageLauncher
+# Or integrate with your system using Gear Lever
 ```
 
-**Note:** AppImage login requires proper desktop integration. Use [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or manually install the provided `.desktop` file to `~/.local/share/applications/`.
+**Note:** AppImage login requires proper desktop integration. Use [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) or manually install the provided `.desktop` file to `~/.local/share/applications/`.
+
+**Automatic Updates:** AppImages downloaded from GitHub releases include embedded update information and work seamlessly with Gear Lever for automatic updates. Locally-built AppImages can be manually configured for updates in Gear Lever.
 
 ## Configuration
 
@@ -106,7 +108,7 @@ sudo dpkg -P claude-desktop
 **For AppImages:**
 1. Delete the `.AppImage` file
 2. Remove the `.desktop` file from `~/.local/share/applications/`
-3. If using AppImageLauncher, use its uninstall option
+3. If using Gear Lever, use its uninstall option
 
 **Remove user configuration (both formats):**
 ```bash
@@ -131,6 +133,7 @@ AppImages run with `--no-sandbox` due to electron's chrome-sandbox requiring roo
 For enhanced security, consider:
 - Using the .deb package instead
 - Running the AppImage within a separate sandbox (e.g., bubblewrap)
+- Using Gear Lever's integrated AppImage management for better isolation
 
 ## Technical Details
 

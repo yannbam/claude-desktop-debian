@@ -77,10 +77,10 @@ if [ -z "\$APPIMAGE_PATH" ]; then
     fi
 fi
 
-# --- Desktop Integration (Handled by AppImageLauncher) ---
+# --- Desktop Integration (Handled by Gear Lever) ---
 # The bundled .desktop file (claude-desktop-appimage.desktop) inside the AppImage
 # contains the necessary MimeType=x-scheme-handler/claude; entry.
-# AppImageLauncher (or similar tools) will use this file to integrate
+# Gear Lever (or similar tools) will use this file to integrate
 # the AppImage with the system, including setting up the URI scheme handler,
 # if the user chooses to integrate. No manual registration is needed here.
 # --- End Desktop Integration ---
@@ -88,6 +88,8 @@ fi
 
 # Set up environment variables if needed (e.g., LD_LIBRARY_PATH)
 # export LD_LIBRARY_PATH="\$APPDIR/usr/lib:\$LD_LIBRARY_PATH"
+
+export ELECTRON_FORCE_IS_PACKAGED=true
 
 # Detect if Wayland is likely running
 IS_WAYLAND=false
@@ -273,15 +275,60 @@ echo "📦 Building AppImage..."
 OUTPUT_FILENAME="${PACKAGE_NAME}-${VERSION}-${ARCHITECTURE}.AppImage"
 OUTPUT_PATH="$WORK_DIR/$OUTPUT_FILENAME"
 
-# Execute appimagetool
-# Export ARCH instead of using env
-export ARCH="$ARCHITECTURE"
-echo "Using ARCH=$ARCH" # Debug output
-if "$APPIMAGETOOL_PATH" "$APPDIR_PATH" "$OUTPUT_PATH"; then
-    echo "✓ AppImage built successfully: $OUTPUT_PATH"
+# --- Prepare Update Information (GitHub Actions only) ---
+# Check if running in GitHub Actions workflow
+if [ "$GITHUB_ACTIONS" = "true" ]; then
+    echo "🔄 Running in GitHub Actions - embedding update information for automatic updates..."
+    
+    # Check if zsyncmake is available (required for generating .zsync files)
+    if ! command -v zsyncmake &> /dev/null; then
+        echo "⚠️ zsyncmake not found. Installing zsync package for .zsync file generation..."
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y zsync
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y zsync
+        elif command -v zypper &> /dev/null; then
+            sudo zypper install -y zsync
+        else
+            echo "⚠️ Cannot install zsync automatically. .zsync files may not be generated."
+        fi
+    fi
+
+    # Format: gh-releases-zsync|<username>|<repository>|<tag>|<filename-pattern>
+    # Using 'latest' tag to always point to the most recent release
+    UPDATE_INFO="gh-releases-zsync|aaddrick|claude-desktop-debian|latest|claude-desktop-*-${ARCHITECTURE}.AppImage.zsync"
+    echo "Update info: $UPDATE_INFO"
+
+    # Execute appimagetool with update information
+    export ARCH="$ARCHITECTURE"
+    echo "Using ARCH=$ARCH" # Debug output
+    if "$APPIMAGETOOL_PATH" --updateinformation "$UPDATE_INFO" "$APPDIR_PATH" "$OUTPUT_PATH"; then
+        echo "✓ AppImage built successfully with embedded update info: $OUTPUT_PATH"
+        # Check if zsync file was generated
+        ZSYNC_FILE="${OUTPUT_PATH}.zsync"
+        if [ -f "$ZSYNC_FILE" ]; then
+            echo "✓ zsync file generated: $ZSYNC_FILE"
+            echo "📤 zsync file will be included in release artifacts"
+        else
+            echo "⚠️ zsync file not generated (zsyncmake may not be installed)"
+        fi
+    else
+        echo "❌ Failed to build AppImage using $APPIMAGETOOL_PATH"
+        exit 1
+    fi
 else
-    echo "❌ Failed to build AppImage using $APPIMAGETOOL_PATH"
-    exit 1
+    echo "🏠 Running locally - building AppImage without update information"
+    echo "   (Update info and zsync files are only generated in GitHub Actions for releases)"
+    
+    # Execute appimagetool without update information
+    export ARCH="$ARCHITECTURE"
+    echo "Using ARCH=$ARCH" # Debug output
+    if "$APPIMAGETOOL_PATH" "$APPDIR_PATH" "$OUTPUT_PATH"; then
+        echo "✓ AppImage built successfully: $OUTPUT_PATH"
+    else
+        echo "❌ Failed to build AppImage using $APPIMAGETOOL_PATH"
+        exit 1
+    fi
 fi
 
 echo "--- AppImage Build Finished ---"

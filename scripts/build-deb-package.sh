@@ -92,6 +92,8 @@ echo "--- Claude Desktop Launcher Start ---" >> "\$LOG_FILE"
 echo "Timestamp: \$(date)" >> "\$LOG_FILE"
 echo "Arguments: \$@" >> "\$LOG_FILE"
 
+export ELECTRON_FORCE_IS_PACKAGED=true
+
 # Detect if Wayland is likely running
 IS_WAYLAND=false
 if [ ! -z "\$WAYLAND_DISPLAY" ]; then

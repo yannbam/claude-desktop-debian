@@ -45,4 +45,5 @@ jobs:
         path: | # Adjust path based on expected output
           claude-desktop_*.deb
           claude-desktop-*.AppImage
+          claude-desktop-*.AppImage.zsync
         if-no-files-found: error # Fail if build didn't produce output
