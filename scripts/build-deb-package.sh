@@ -231,6 +231,14 @@ echo "✓ Postinst script created"
 echo "📦 Building .deb package..."
 DEB_FILE="$WORK_DIR/${PACKAGE_NAME}_${VERSION}_${ARCHITECTURE}.deb"
 
+# Fix DEBIAN directory permissions (must be 755 for dpkg-deb)
+echo "Setting DEBIAN directory permissions..."
+chmod 755 "$PACKAGE_ROOT/DEBIAN"
+
+# Fix script permissions in DEBIAN directory
+echo "Setting script permissions..."
+chmod 755 "$PACKAGE_ROOT/DEBIAN/postinst"
+
 if ! dpkg-deb --build "$PACKAGE_ROOT" "$DEB_FILE"; then
     echo "❌ Failed to build .deb package"
     exit 1
